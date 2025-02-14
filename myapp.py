@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import yfinance as yf
-import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
@@ -14,6 +12,19 @@ st.set_page_config(page_title = "Visualization Project",
                    page_icon = ":bar_chart:",
                    layout = "wide"
 )
+
+
+
+
+def load_css(file_path):
+    with open(file_path, "r") as f:
+        css = f"<style>{f.read()}</style>"
+        st.markdown(css, unsafe_allow_html=True)
+
+# Load the CSS file
+load_css(r"C:\Users\shish\OneDrive\Desktop\Project\style.css")
+
+
 
 # Loading the dataset
 @st.cache_data
@@ -75,20 +86,74 @@ total_customers = int(filtered_data['Customer Name'].nunique())
 total_products = int(filtered_data['Product Name'].nunique())
 average_shipping_time = filtered_data['Shipping Time'].mean()
 
-def calculateChange():
-      n = year.count()
 
-      #Grouping By Year
-      filtered_data['Year'] = filtered_data['Order Date'].dt.year
-      group_by_year = filtered_data.groupby('Year')
-      sales_by_year = group_by_year['Sales'].sum()
+# Fuction to calculate the change in sales and profit after each year
+def calculateChange(years_selected):
 
-      sales_by_year = sales_by_year.reset_index()
+      # Grouping the data frame to find the change in sales and profit after each year
+      group_by_year = data.groupby('Year').agg({'Sales' : 'sum', 'Profit' : 'sum'}).reset_index()
 
+      group_by_year['Sales Diff'] = group_by_year['Sales'].diff()
+      group_by_year['Profit Diff'] = group_by_year['Profit'].diff()
+
+      group_by_year['Sales Diff'] = group_by_year['Sales Diff'].fillna(0)
+      group_by_year['Profit Diff'] = group_by_year['Profit Diff'].fillna(0)
+
+      salesChange2022 = group_by_year.loc[group_by_year['Year'] == 2022, 'Sales Diff'].values[0]
+      salesChange2023 = group_by_year.loc[group_by_year['Year'] == 2023, 'Sales Diff'].values[0]
+      salesChange2024 = group_by_year.loc[group_by_year['Year'] == 2024, 'Sales Diff'].values[0]
+
+      profitChange2022 = group_by_year.loc[group_by_year['Year'] == 2022, 'Profit Diff'].values[0]
+      profitChange2023 = group_by_year.loc[group_by_year['Year'] == 2023, 'Profit Diff'].values[0]
+      profitChange2024 = group_by_year.loc[group_by_year['Year'] == 2024, 'Profit Diff'].values[0]
+
+
+      if not years_selected:
+            return 0, 0
+
+      n = len(years_selected)
+
+      selected_year = max(years_selected)
+
+      salesChange = 0
+      profitChange = 0
+
+      if (n == 1):
+            if (selected_year == 2024):
+                  salesChange = salesChange2024
+                  profitChange = profitChange2024
+                  
+
+            elif (selected_year == 2023):
+                  salesChange = salesChange2023
+                  profitChange = profitChange2023
+                  
+            
+            elif (selected_year == 2022):
+                  salesChange = salesChange2022
+                  profitChange = profitChange2022
+                  
+
+            elif (selected_year == 2021):
+                  salesChange = 0
+                  salesChange = 0
+      
+      elif(n > 1):
+            return 0,0
+    
+      salesChange = int(salesChange/1000)
+      profitChange = int(profitChange/1000)
+
+      return salesChange, profitChange
+      
+
+# Calling the fucntion to calculate the change
+salesChange, profitChange = calculateChange(year)
 
 
 # Defining conainer for KPIs
 con1 = st.container()
+
 
 with con1:
 
@@ -105,18 +170,18 @@ with con1:
                               display_sales = int(total_sales / 1000)
                               st.metric(label = "Total Sales", value = f"${display_sales} K")
             else:
-                  st.metric(label = "Total Sales", value = f"${total_sales} K", delta = "200 K")
+                  st.metric(label = "Total Sales", value = f"${total_sales} K")
 
       with col2:
             if total_profit > 0:
                   if total_profit > 999999:
                         display_profit = total_profit / 100000
-                        st.metric("Total Profit", f"${display_profit:,.2f} M")
+                        st.metric("Total Profit", value = f"${display_profit:,.2f} M")
 
                   else:
                         if total_profit > 999:
                               display_profit = int(total_profit / 1000)
-                              st.metric("Total Profit", f"${display_profit} K")
+                              st.metric("Total Profit", value = f"${display_profit} K")
             
             else:
                   st.metric("Total Profit", f"${total_profit} K")
@@ -128,10 +193,12 @@ with con1:
             st.metric("Total Products", f"{total_products}")
 
       with col5:
-            st.metric("Average Shipping Time", f"{average_shipping_time:.2f} days")
+            st.metric("Average Shipping Time", f"{average_shipping_time:.2f} Days")
 
 
 st.markdown("---")
+
+
 
 
 
@@ -152,7 +219,13 @@ choropleth = px.choropleth(
       scope = 'usa',
       color = 'Sales',
       color_continuous_scale = 'Viridis',
-      title = "Sales by State/Province in the USA and Canda"
+      title = "Sales By State/Province"
+)
+
+choropleth.update_layout(
+    title_font=dict(
+        size=36  # Change this value to set your desired font size
+    )
 )
 
 con2 = st.container()
@@ -162,12 +235,20 @@ with con2:
       col1, col2 = st.columns(2)
 
       with col1:
-           st.header("Bar Chart")
+           st.header("Bar Chart (Sales Vs Region)")
            st.bar_chart(sales_by_region, x_label = "Region", y_label = "Sales")
      
       with col2:
            st.plotly_chart(choropleth)
             
+
+
+
+
+# Horizontal Bar Chart
+# Grouping By Sub-Category
+group_by_sub_category = filtered_data.groupby('Sub-Category')
+sales_by_sub_category = group_by_sub_category['Sales'].sum()
 
 
 
@@ -179,17 +260,7 @@ sales_by_year = group_by_year['Sales'].sum()
 sales_by_year = sales_by_year.reset_index()
 sales_by_year['Year'] = sales_by_year['Year'].astype(str) 
 
-# Donut Chart
-# Grouping By Sub-Category
-group_by_sub_category = filtered_data.groupby('Sub-Category')
-sales_by_sub_category = group_by_sub_category['Sales'].sum()
 
-# sales_by_sub_category = sales_by_sub_category.reset_index()
-
-donutChart = alt.Chart(sales_by_sub_category).mark_arc(innerRadius = 50).encode(
-            theta = alt.Theta(field = 'Sales', type = 'quantitative'),
-            color = alt.Color(field = 'Sub-Category', type = 'nominal')
-)
 
 con3 = st.container()
 with con3:
@@ -197,27 +268,20 @@ with con3:
 
      with col1:
             st.header("Horizontal Bar Chart")
-            # st.altair_chart(donutChart, use_container_width = True)
-            st.bar_chart(sales_by_sub_category.T, horizontal = True)
+            st.bar_chart(sales_by_sub_category.T, horizontal = True, x_label = "Sales", y_label = "Sub-Category")
             
 
      with col2:
-            st.header("Line Chart")
+            st.header("Line Chart (Sales Vs Year)")
             st.line_chart(sales_by_year, x = 'Year', y = 'Sales', x_label = 'Year', y_label = 'Sales')
 
 
 
-# Horizontal bar Chart
-# Grouping by category
-# group_by_category = filtered_data.groupby('Category')
-# sales_by_category = group_by_category['Sales'].sum()
-
-# with col1:
-#       st.header("Horizontal Bar Chart")
-#       st.bar_chart(sales_by_category.T, horizontal = True)
 
 
-con4 = st.container()
+
+
+
 
 # Grouped Bar Chart
 group_by_year_category = filtered_data.groupby(['Year', 'Category'])
@@ -270,6 +334,8 @@ donutChart = alt.Chart(profit_by_season).mark_arc(innerRadius = 50).encode(
             title = 'Profit By Season'
 )
 
+con4 = st.container()
+
 with con4:
 
       col1, col2 = st.columns(2)
@@ -294,21 +360,7 @@ scatter_plot = alt.Chart(filtered_data).mark_circle(size=60).encode(
 
 
 
-# con5 = st.container()
 
-# with con5:
-
-#       col1, col2 = st.columns(2)
-
-#       with col1:
-            # plt.figure(figsize=(10, 6))
-            # sns.scatterplot(data=filtered_data, x='Discount', y='Profit', jitter = True)
-            # plt.title('Discount vs. Profit')
-            # plt.xlabel('Discount (%)')
-            # plt.ylabel('Profit ($)')
-            # plt.show()
-            # st.pyplot(plt)
-            # st.altair_chart(scatter_plot, use_container_width = True)
 
 
 # WordCloud
@@ -331,11 +383,11 @@ ax.axis("off")
 plt.gca().set_position([0, 0, 1, 1])  # Fill the entire figure canvas
 
 
-# # Saving the wordcloud
+# Saving the wordcloud
 plt.savefig("wordcloud.png", format="png", bbox_inches="tight", pad_inches=0, facecolor="black")
 image = Image.open("wordcloud.png")
 
 with con5:
-     st.header("Word Cloud")
+     st.header("Word Cloud (Most Frequent Cities)")
 #      st.pyplot(fig, clear_figure = True)
      st.image(image, use_container_width=True)

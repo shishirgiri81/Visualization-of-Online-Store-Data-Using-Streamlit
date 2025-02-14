@@ -1,0 +1,36 @@
+/* styles.css */
+.stContainer {
+  background-color: #1e1e1e;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.stMetric {
+  background-color: #2d2d2d;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  color: white;
+}
+
+.stMetric label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+  display: block; 
+  text-align: center;
+}
+
+.stMetric value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #4caf50;
+}
+
+.stMetric delta {
+  font-size: 14px;
+  color: #ff6f61;
+}
+
